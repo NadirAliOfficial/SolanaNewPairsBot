@@ -25,7 +25,7 @@ def get_twitter_followers(twitter_url: str) -> int:
         # 'stats' might look like {'tweets': ..., 'following': ..., 'followers': ..., 'likes': ..., 'media': ...}
         if profile and 'stats' in profile:
             return profile['stats'].get('followers', 0)
-    except Nitter.NotFoundError as e:
+    except TypeError as e:
         print(f"[Nitter Error] {e}")
     except Exception as e:
         print(f"[Unexpected Error] {e}")
@@ -83,11 +83,11 @@ def monitor_new_pairs():
                         print("Twitter:      N/A")
                     print("-" * 60)
 
-            time.sleep(3)
+            time.sleep(1)
 
         except requests.exceptions.RequestException as e:
             print(f"[ERROR] {e}")
-            time.sleep(5)
+            time.sleep(1)
 
 if __name__ == "__main__":
     monitor_new_pairs()

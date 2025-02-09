@@ -1,4 +1,4 @@
-#!/home/nadir-ali/Projects/Nav_Ahmed/venv/bin/python
+#!/home/nadir-ali/Projects/Nav_Ahmed/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

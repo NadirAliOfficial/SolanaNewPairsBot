@@ -54,7 +54,9 @@ cover/
 # Translations
 *.mo
 *.pot
-
+# venv
+.venv
+venv
 # Django stuff:
 *.log
 local_settings.py
