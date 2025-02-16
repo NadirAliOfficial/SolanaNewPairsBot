@@ -20,8 +20,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Telegram API credentials (for Telethon) from .env file
-API_ID = int(os.getenv('API_ID'))
-API_HASH = os.getenv('API_HASH')
+API_ID = 23029837
+API_HASH = "2cd4f5ead73424ff9a02da5f66de76eb"
 SESSION_PATH = 'session_name'  # Name of your pre-saved session file
 
 # Initialize the asynchronous Telethon client
@@ -167,7 +167,6 @@ async def monitor_new_pairs(app, chat_id: int):
                         f"<b>NEW TOKEN FOUND</b>\n\n"
                         f"• <b>Chain:</b> {chain_id}\n"
                         f"• <b>Token Address:</b> <code>{token_address}</code>\n"
-                        f"• <b>Description:</b> {description or 'N/A'}\n"
                         f"• <b>Website:</b> {website_url or 'N/A'}\n"
                     )
                     if telegram_url:
@@ -210,7 +209,8 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ------------------------------------------------------------------------------
 
 def main():
-    app = ApplicationBuilder().token("8141585234:AAF7SpJPDpvmQGmkRmhUhxCIpxNs0soQQYI").build()
+    token = "8141585234:AAF7SpJPDpvmQGmkRmhUhxCIpxNs0soQQYI"
+    app = ApplicationBuilder().token(token).build()
     app.add_handler(CommandHandler("start", start_command))
     app.run_polling()
 
