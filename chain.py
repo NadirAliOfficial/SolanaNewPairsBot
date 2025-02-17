@@ -312,11 +312,11 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # By default, enable all chains.
     chat_chain_filters[chat_id] = set(available_chains)
 
-    keyboard = build_toggle_keyboard(chat_id)
-    await update.message.reply_text("Select the chains you want to receive updates for:", reply_markup=keyboard)
-    await update.message.reply_text("Monitoring started! You will receive new token alerts here.")
+    # keyboard = build_toggle_keyboard(chat_id)
+    # await update.message.reply_text("Select the chains you want to receive updates for:", reply_markup=keyboard)
+    await update.message.reply_text("Monitoring started! You will receive new token alerts here. Press Command /chain To filter new pairs ")
     context.application.create_task(monitor_new_pairs(context.application, chat_id))
-
+ 
 async def chain_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     /chain command:
