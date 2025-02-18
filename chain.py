@@ -188,24 +188,30 @@ async def monitor_new_pairs(app, chat_id: int, context: ContextTypes.DEFAULT_TYP
                 if ffilter > 0 and followers < ffilter:
                     continue
 
-                # Build message
+                dex_link = f"https://dexscreener.com/{chain_id.lower()}/{token_addr}"
+                # Using a divider made of Unicode block elements for a clean look.
+                divider = "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+
                 msg = (
-                    f"<b>NEW TOKEN FOUND</b>\n\n"
-                    f"• <b>Chain (ID):</b> {chain_id}\n"
-                    f"• <b>Token Address:</b> <code>{token_addr}</code>\n"
-                    f"• <b>Website:</b> {website_url or 'N/A'}\n"
+                    "<b>✨ NEW TOKEN ALERT ✨</b>\n" + 
+                    f"<b>Chain:</b> <code>{chain_id}</code>\n" +
+                    f"<b>Token Address:</b> <code>{token_addr}</code>\n" +
+                    f"<b>Website:</b> {website_url if website_url else '<i>N/A</i>'}\n" +
+                    f"<b>Telegram:</b> " +
+                    (f"<a href='{telegram_url}'>{telegram_url}</a>" if telegram_url and telegram_url != 'N/A' else "<i>N/A</i>") +
+                    f" ({telegram_members} Members)\n" +
+                    f"<b>Twitter:</b> " +
+                    (f"<a href='{twitter_url}'>{twitter_url}</a>" if twitter_url and twitter_url != 'N/A' else "<i>N/A</i>") +
+                    f" ({followers} Followers)\n" +
+                    f"<b>Dexscreener:</b> <a href='{dex_link}'>{dex_link}</a>" +
+                    divider +
+                    "<i>Stay updated with the latest tokens!</i>"
                 )
-                if telegram_url:
-                    msg += f"• <b>Telegram:</b> {telegram_url} (Members: {telegram_members})\n"
-                else:
-                    msg += "• <b>Telegram:</b> N/A\n"
-                if twitter_url:
-                    msg += f"• <b>Twitter:</b> <a href='{twitter_url}'>{twitter_url}</a> (Followers: {followers})\n"
-                else:
-                    msg += "• <b>Twitter:</b> N/A\n"
-                msg += "\n----------------------------------------------"
 
                 await app.bot.send_message(chat_id=chat_id, text=msg, parse_mode="HTML")
+
+                
+
 
             await asyncio.sleep(2)
         except requests.exceptions.RequestException as e:
@@ -247,17 +253,28 @@ async def resend_filtered_tokens(update: Update, context: ContextTypes.DEFAULT_T
         await update.message.reply_text("No new tokens match the current filter.")
     else:
         await update.message.reply_text(f"Found {len(new_tokens)} tokens matching your filters:")
+        divider = "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+
         for t in new_tokens:
+            # Build Dexscreener link based on chain and token address
+            dex_link = f"https://dexscreener.com/{t['chain_id'].lower()}/{t['token_address']}"
+            
             msg = (
-                f"• <b>Chain (ID):</b> {t['chain_id']}\n"
-                f"• <b>Token Address:</b> {t['token_address']}\n"
-                f"• <b>Website:</b> {t['website_url']}\n"
-                f"• <b>Telegram:</b> {t['telegram_url']} (Members: {t['telegram_members']})\n"
-                f"• <b>Twitter:</b> {t['twitter_url']} (Followers: {t['followers']})\n"
-                "----------------------------------------------"
+                f"<b>🔍 FILTERED TOKEN</b>{divider}"
+                f"<b>Chain:</b> <code>{t['chain_id']}</code>\n"
+                f"<b>Token Address:</b> <code>{t['token_address']}</code>\n"
+                f"<b>Website:</b> {t['website_url'] if t['website_url'] != 'N/A' else '<i>N/A</i>'}\n"
+                f"<b>Telegram:</b> " +
+                    (f"<a href='{t['telegram_url']}'>{t['telegram_url']}</a>" if t['telegram_url'] != 'N/A' else "<i>N/A</i>") +
+                f" ({t['telegram_members']} Members)\n"
+                f"<b>Twitter:</b> " +
+                    (f"<a href='{t['twitter_url']}'>{t['twitter_url']}</a>" if t['twitter_url'] != 'N/A' else "<i>N/A</i>") +
+                f" ({t['followers']} Followers)\n"
+                f"<b>Dexscreener:</b> <a href='{dex_link}'>{dex_link}</a>"
             )
             await update.message.reply_text(msg, parse_mode="HTML")
             context.chat_data["sent_filtered"].add(t["token_address"])
+
 
 # ------------------------------------------------------------------------------
 # Commands
@@ -272,11 +289,25 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.chat_data["follower_filter"] = 0
     context.chat_data["all_tokens"] = []
     context.chat_data["sent_filtered"] = set()
+    start_msg = (
+    "<b>🚀 Welcome to New Pairs Bot! 🚀</b>\n"
+    "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+    "I continuously scan multiple blockchains to fetch <b>new tokens</b> in real-time. \n"
+    "All tokens are stored securely and can be filtered later using the /filter command.\n"
+    "\n"
+    "• <b>Real-Time Updates:</b> Get instant alerts for tokens that pass your custom filters.\n"
+    "• <b>Historical Data:</b> Review stored tokens at any time.\n"
+    "\n"
+    "Press /filter anytime to refine your view by chain or Twitter followers.\n"
+    "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+    "<i>Stay ahead with the latest token trends!</i>"
+)
+
 
     await update.message.reply_text(
-        "Welcome! I will continuously fetch new tokens from multiple chains.\n"
-        "All tokens will be stored and shown if they pass your filters.\n"
-        "Use /filter any time to adjust filters (by chain or Twitter followers)."
+        text=start_msg,
+        parse_mode="HTML",
+        reply_markup=ReplyKeyboardRemove()
     )
 
     # Start background monitoring as a task
@@ -307,16 +338,23 @@ async def filter_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         utility_buttons
     ]
     reply_markup = ReplyKeyboardMarkup(keyboard_layout, resize_keyboard=True)
-    explanation = (
-        "Use these buttons to filter the tokens stored:\n"
-        "- Pick a chain (e.g. Solana) to filter only that chain.\n"
-        "- Pick a follower filter (e.g. Followers > 500) to see tokens with at least that many followers.\n"
-        "- Press 'Clear Filters' to remove all filters.\n"
-        "- Press 'Show Current Filtered' to re-send tokens that match the current filters.\n"
-        "- Press 'Done' to hide the keyboard.\n"
-        "All future tokens are also filtered in real-time based on your settings."
-    )
-    await update.message.reply_text(explanation, reply_markup=reply_markup)
+    filter_msg = (
+    "<b>🔧 Token Filter Options</b>\n"
+    "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+    "Use the buttons below to customize your token view:\n"
+    "\n"
+    "• <b>Chain Filter:</b> Select a specific blockchain (e.g. <code>Solana</code>, <code>Ethereum</code>, etc.) to show tokens only from that network.\n"
+    "• <b>Twitter Follower Filter:</b> Choose a minimum follower threshold (e.g. <code>Followers > 500</code>) so only tokens with enough social traction are displayed.\n"
+    "\n"
+    "• <i>Clear Filters</i> will reset all settings.\n"
+    "• <i>Show Current Filtered</i> will display all tokens stored that match your current criteria.\n"
+    "• <i>Done</i> hides this filter menu (you can type <code>/filter</code> to open it again).\n"
+    "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+    "<i>All new tokens are automatically filtered in real-time based on your current settings.</i>"
+)
+
+    await update.message.reply_text(filter_msg, parse_mode='HTML', reply_markup=reply_markup)
+
 
 # ------------------------------------------------------------------------------
 # Filter Selection Handler
