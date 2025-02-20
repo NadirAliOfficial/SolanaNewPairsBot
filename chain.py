@@ -409,7 +409,8 @@ async def filter_selection_handler(update: Update, context: ContextTypes.DEFAULT
 # ------------------------------------------------------------------------------
 def main():
     import os   
-    token = os.getenv("token")
+    token = "8141585234:AAF7SpJPDpvmQGmkRmhUhxCIpxNs0soQQYI"
+
     app = ApplicationBuilder().token(token).build()
 
     app.add_handler(CommandHandler("start", start_command))
