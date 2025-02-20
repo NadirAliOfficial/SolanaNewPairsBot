@@ -315,13 +315,9 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def filter_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
-    /filter -> Show a permanent keyboard with chain/follower options.
+    /filter -> Show keyboard for follower filters and utilities.
+    Chain filtering must be done manually by typing the chain name.
     """
-    chain_buttons = [
-        KeyboardButton("ETH"), KeyboardButton("BSC"), KeyboardButton("Polygon"),
-        KeyboardButton("Solana"), KeyboardButton("SUI"), KeyboardButton("ADA"),
-        KeyboardButton("Ink"), KeyboardButton("Avalanche")
-    ]
     follower_buttons = [
         KeyboardButton("Followers > 100"),
         KeyboardButton("Followers > 500"),
@@ -333,28 +329,23 @@ async def filter_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         KeyboardButton("Done")
     ]
     keyboard_layout = [
-        chain_buttons,
         follower_buttons,
         utility_buttons
     ]
     reply_markup = ReplyKeyboardMarkup(keyboard_layout, resize_keyboard=True)
-    filter_msg = (
-    "<b>🔧 Token Filter Options</b>\n"
-    "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-    "Use the buttons below to customize your token view:\n"
-    "\n"
-    "• <b>Chain Filter:</b> Select a specific blockchain (e.g. <code>Solana</code>, <code>Ethereum</code>, etc.) to show tokens only from that network.\n"
-    "• <b>Twitter Follower Filter:</b> Choose a minimum follower threshold (e.g. <code>Followers > 500</code>) so only tokens with enough social traction are displayed.\n"
-    "\n"
-    "• <i>Clear Filters</i> will reset all settings.\n"
-    "• <i>Show Current Filtered</i> will display all tokens stored that match your current criteria.\n"
-    "• <i>Done</i> hides this filter menu (you can type <code>/filter</code> to open it again).\n"
-    "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-    "<i>All new tokens are automatically filtered in real-time based on your current settings.</i>"
-)
-
-    await update.message.reply_text(filter_msg, parse_mode='HTML', reply_markup=reply_markup)
-
+    explanation = (
+        "<b>🔧 Token Filter Options</b>\n"
+        "\n"
+        "• Use the buttons below to set a minimum Twitter follower threshold.\n"
+        "• To filter by chain, simply type the chain name (e.g., solana, ethereum, bsc, bera, etc.) directly in the chat.\n"
+        "  Your input will be validated against the tokens stored in our system.\n"
+        "• Press <i>Clear Filters</i> to reset all filters.\n"
+        "• Press <i>Show Current Filtered</i> to display tokens matching your current filters.\n"
+        "• Press <i>Done</i> to hide the filter keyboard.\n"
+        "\n"
+        "<b>Note:</b> New tokens from all chains are sent in real time."
+    )
+    await update.message.reply_text(explanation, reply_markup=reply_markup, parse_mode="HTML")
 
 # ------------------------------------------------------------------------------
 # Filter Selection Handler
@@ -362,28 +353,39 @@ async def filter_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def filter_selection_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_text = update.message.text.strip().lower()
 
+    # Ensure defaults exist:
     if "chain_filter" not in context.chat_data:
         context.chat_data["chain_filter"] = None
     if "follower_filter" not in context.chat_data:
         context.chat_data["follower_filter"] = 0
 
-    # Chain selection using textual chain names
-    chain_options = {
-        "eth": "ethereum",
-        "ethereum": "ethereum",
-        "bsc": "bsc",
-        "polygon": "polygon",
-        "solana": "solana",
-        "sui": "sui",
-        "ada": "ada",
-        "avalanche": "avalanche",
-        "ink": "ink"
-    }
-    if user_text in chain_options:
-        selected_chain = chain_options[user_text]
-        context.chat_data["chain_filter"] = selected_chain
-        await update.message.reply_text(f"Chain filter set to {selected_chain.upper()}.")
-    elif user_text.startswith("followers >"):
+    # Check if the user is trying to set a chain filter by typing a chain name
+    # Get available chains from the JSON file (or from in-memory tokens)
+    all_tokens = load_tokens_from_file()  # from your JSON file
+    available_chains = { token["chain_id"].strip().lower() for token in all_tokens }
+    
+    # If the user text matches one of the available chains, set the filter
+    if user_text in available_chains:
+        context.chat_data["chain_filter"] = user_text  # store the normalized chain name
+        await update.message.reply_text(f"Chain filter set to {user_text.upper()}.")
+        return
+
+    # If the user typed something that looks like a chain name but not found:
+    if user_text not in ["followers > 100", "followers > 500", "followers > 1000", "clear filters", "show current filtered", "done"] and not user_text.startswith("followers >"):
+        # User input doesn't match our utility commands. Check if it resembles a chain name.
+        if not available_chains:
+            await update.message.reply_text("No chain data available yet. Please wait until tokens are fetched.")
+        else:
+            # If the user text is not in available_chains, inform them.
+            available_list = ", ".join(sorted(available_chains))
+            await update.message.reply_text(
+                f"Chain '{user_text}' not found. Available chains are: {available_list}.\n"
+                "Please check your spelling and try again."
+            )
+        return
+
+    # Follower filters:
+    if user_text.startswith("followers >"):
         try:
             threshold = int(user_text.split(">")[1].strip())
             context.chat_data["follower_filter"] = threshold
@@ -393,24 +395,21 @@ async def filter_selection_handler(update: Update, context: ContextTypes.DEFAULT
     elif user_text == "clear filters":
         context.chat_data["chain_filter"] = None
         context.chat_data["follower_filter"] = 0
-        context.chat_data["sent_filtered"] = set()  # Reset already sent filtered tokens
+        context.chat_data["sent_filtered"] = set()  # Reset filtered output tracker
         await update.message.reply_text("All filters cleared.")
     elif user_text == "show current filtered":
         await resend_filtered_tokens(update, context)
     elif user_text == "done":
-        await update.message.reply_text(
-            "Filter menu hidden. Type /filter to open again.",
-            reply_markup=ReplyKeyboardRemove()
-        )
+        await update.message.reply_text("Filter menu hidden. Type /filter to open it again.", reply_markup=ReplyKeyboardRemove())
     else:
-        await update.message.reply_text("Please choose a valid filter option or press 'Done'.")
+        await update.message.reply_text("Please choose a valid filter option or type a chain name.")
 
 # ------------------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------------------
 def main():
     import os   
-    token = os.getenv("BOT_TOKEN")
+    token = os.getenv("token")
     app = ApplicationBuilder().token(token).build()
 
     app.add_handler(CommandHandler("start", start_command))

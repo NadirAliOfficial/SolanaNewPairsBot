@@ -5,6 +5,11 @@ __pycache__/
 
 # C extensions
 *.so
+# 
+/home/nadir-ali/Projects/Nav_Ahmed/session_name.session
+session_name.session
+.env
+/home/nadir-ali/Projects/Nav_Ahmed/.env
 
 # Distribution / packaging
 .Python
