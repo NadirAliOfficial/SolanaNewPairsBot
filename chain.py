@@ -188,27 +188,46 @@ async def monitor_new_pairs(app, chat_id: int, context: ContextTypes.DEFAULT_TYP
                 if ffilter > 0 and followers < ffilter:
                     continue
 
-                dex_link = f"https://dexscreener.com/{chain_id.lower()}/{token_addr}"
-                # Using a divider made of Unicode block elements for a clean look.
-                divider = "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                # Mapping from normalized chain names to Telegram channel links
+                chain_channels = {
+                    "hbar": "https://t.me/+-GNRIXL75FdlMzA0",
+                    "bera": "https://t.me/+-nNZ7GRsDD8yOTRk",
+                    "base": "https://t.me/+Z7bIbiZSvmw2MDg0",
+                    "ink": "https://t.me/+bgkM-tOrCvBmNjk0",
+                    "xrp": "https://t.me/+JQ4yRr7UWxtiOTFk",
+                    "sui": "https://t.me/+qHwlrzvNvNJlZDI0"
+                }
 
+                # In your monitor_new_pairs function, after constructing your message:
+                dex_link = f"https://dexscreener.com/{chain_id.lower()}/{token_addr.lower()}"
+                divider = "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 msg = (
-                    "<b>✨ NEW TOKEN ALERT ✨</b>\n" + 
-                    f"<b>Chain:</b> <code>{chain_id}</code>\n" +
-                    f"<b>Token Address:</b> <code>{token_addr}</code>\n" +
-                    f"<b>Website:</b> {website_url if website_url else '<i>N/A</i>'}\n" +
+                    "<b>🚀 NEW TOKEN ALERT 🚀</b>" + divider +
+                    f"<b>Chain:</b> <code>{chain_id}</code>\n"
+                    f"<b>Token Address:</b> <code>{token_addr}</code>\n"
+                    f"<b>Website:</b> {website_url if website_url else '<i>N/A</i>'}\n"
                     f"<b>Telegram:</b> " +
-                    (f"<a href='{telegram_url}'>{telegram_url}</a>" if telegram_url and telegram_url != 'N/A' else "<i>N/A</i>") +
-                    f" ({telegram_members} Members)\n" +
+                    (f"<a href='{telegram_url}'>{telegram_url}</a>" if telegram_url and telegram_url != "N/A" else "<i>N/A</i>") +
+                    f" (<code>{telegram_members}</code> Members)\n"
                     f"<b>Twitter:</b> " +
-                    (f"<a href='{twitter_url}'>{twitter_url}</a>" if twitter_url and twitter_url != 'N/A' else "<i>N/A</i>") +
-                    f" ({followers} Followers)\n" +
+                    (f"<a href='{twitter_url}'>{twitter_url}</a>" if twitter_url and twitter_url != "N/A" else "<i>N/A</i>") +
+                    f" (<code>{followers}</code> Followers)\n"
                     f"<b>Dexscreener:</b> <a href='{dex_link}'>{dex_link}</a>" +
                     divider +
                     "<i>Stay updated with the latest tokens!</i>"
                 )
 
-                await app.bot.send_message(chat_id=chat_id, text=msg, parse_mode="HTML")
+                # Normalize chain_id (assume token chain is stored in lowercase)
+                normalized_chain = chain_id.strip().lower()
+
+                # Check if this chain has a dedicated channel
+                if normalized_chain in chain_channels:
+                    target_channel = chain_channels[normalized_chain]
+                    await app.bot.send_message(chat_id=target_channel, text=msg, parse_mode="HTML")
+                else:
+                    # If the chain is not one of the special ones, send to a default chat (or skip)
+                    await app.bot.send_message(chat_id=chat_id, text=msg, parse_mode="HTML")
+
 
                 
 
