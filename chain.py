@@ -229,7 +229,7 @@ async def monitor_new_pairs(app, chat_id: int, context: ContextTypes.DEFAULT_TYP
                     await app.bot.send_message(chat_id=chat_id, text=msg, parse_mode="HTML")
 
 
-                
+
 
 
             await asyncio.sleep(2)
@@ -277,7 +277,7 @@ async def resend_filtered_tokens(update: Update, context: ContextTypes.DEFAULT_T
         for t in new_tokens:
             # Build Dexscreener link based on chain and token address
             dex_link = f"https://dexscreener.com/{t['chain_id'].lower()}/{t['token_address']}"
-            
+
             msg = (
                 f"<b>🔍 FILTERED TOKEN</b>{divider}"
                 f"<b>Chain:</b> <code>{t['chain_id']}</code>\n"
@@ -382,7 +382,7 @@ async def filter_selection_handler(update: Update, context: ContextTypes.DEFAULT
     # Get available chains from the JSON file (or from in-memory tokens)
     all_tokens = load_tokens_from_file()  # from your JSON file
     available_chains = { token["chain_id"].strip().lower() for token in all_tokens }
-    
+
     # If the user text matches one of the available chains, set the filter
     if user_text in available_chains:
         context.chat_data["chain_filter"] = user_text  # store the normalized chain name
@@ -427,7 +427,7 @@ async def filter_selection_handler(update: Update, context: ContextTypes.DEFAULT
 # Main
 # ------------------------------------------------------------------------------
 def main():
-    import os   
+    import os
     token = "8141585234:AAF7SpJPDpvmQGmkRmhUhxCIpxNs0soQQYI"
 
     app = ApplicationBuilder().token(token).build()
