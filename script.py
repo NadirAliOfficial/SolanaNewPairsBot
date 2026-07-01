@@ -66,7 +66,7 @@ def get_telegram_member_count(telegram_url: str) -> int:
     try:
         # Get the base entity from the username
         entity = telethon_client.get_entity(username)
-        
+
         # If the entity is a channel or supergroup, fetch the full channel info
         if hasattr(entity, 'broadcast') or hasattr(entity, 'megagroup'):
             full_channel = telethon_client(GetFullChannelRequest(entity))
@@ -75,7 +75,7 @@ def get_telegram_member_count(telegram_url: str) -> int:
             else:
                 print(f"[Warning] 'participants_count' not found in full_chat for {telegram_url}")
                 return 0
-        
+
         # Fallback: check if participants_count is directly available
         if hasattr(entity, 'participants_count'):
             return entity.participants_count
