@@ -10,7 +10,7 @@ nitter_client = Nitter("https://nitter.privacydev.net")  # or your preferred sta
 
 def parse_twitter_handle(twitter_url: str) -> str:
     # Remove '/status/...'
-    base_url = twitter_url.split('/status/')[0]  
+    base_url = twitter_url.split('/status/')[0]
     pattern = r"https?://(x\.com|twitter\.com)/([^/]+)"
     match = re.match(pattern, base_url)
     return match.group(2) if match else None
