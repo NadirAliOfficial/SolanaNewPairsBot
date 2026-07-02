@@ -87,7 +87,7 @@ async def get_telegram_member_count(telegram_url: str) -> int:
     try:
         # Use Telethon's async API to get the entity
         entity = await telethon_client.get_entity(username)
-        
+
         # For channels or supergroups, request full details
         if hasattr(entity, 'broadcast') or hasattr(entity, 'megagroup'):
             full_channel = await telethon_client(GetFullChannelRequest(entity))
@@ -133,7 +133,7 @@ async def monitor_new_pairs(app, chat_id: int):
                 token_address = profile.get("tokenAddress", "")
                 if token_address not in seen_addresses:
                     seen_addresses.add(token_address)
-                    
+
                     chain_id    = profile.get("chainId", "")
                     description = profile.get("description", "")
                     links       = profile.get("links", [])
